@@ -1,0 +1,56 @@
+.navbar-toggler[b-07x5tfii6i] {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.top-row[b-07x5tfii6i] {
+    height: 3.5rem;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+.navbar-brand[b-07x5tfii6i] {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: white;
+}
+
+.oi[b-07x5tfii6i] {
+    width: 2rem;
+    font-size: 1.1rem;
+    vertical-align: text-top;
+    top: -2px;
+}
+
+.nav-item[b-07x5tfii6i] {
+    font-size: 0.9rem;
+    padding-bottom: 0.5rem;
+}
+
+    .nav-item:first-of-type[b-07x5tfii6i] {
+        padding-top: 1rem;
+    }
+
+    .nav-item:last-of-type[b-07x5tfii6i] {
+        padding-bottom: 1rem;
+    }
+
+    .nav-item[b-07x5tfii6i]  a {
+        color: rgba(255, 255, 255, 0.8);
+        border-radius: 4px;
+        height: 3rem;
+        display: flex;
+        align-items: center;
+        line-height: 3rem;
+        transition: all 0.3s ease;
+    }
+
+        .nav-item[b-07x5tfii6i]  a.active {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .nav-item[b-07x5tfii6i]  a:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            transform: translateX(5px);
+        }

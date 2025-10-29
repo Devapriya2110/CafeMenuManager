@@ -1,0 +1,180 @@
+﻿@page "/"
+@using CafeMenuManager.Models
+@using CafeMenuManager.Services
+@inject IMenuItemService MenuItemService
+
+<div class="container">
+    <div class="header">
+        <h1>☕ Café Menu Manager</h1>
+        <p>Manage your café menu with ease</p>
+    </div>
+
+    <div class="menu-grid">
+        @foreach (var item in menuItems)
+        {
+            <div class="menu-card @(!item.IsAvailable ? "unavailable" : "")">
+                <div class="card-header">
+                    <h3>@item.Name</h3>
+                    @if (item.IsPopular)
+                    {
+                        <span class="popular-badge">🔥 Popular</span>
+                    }
+                </div>
+                <p class="description">@item.Description</p>
+                <div class="card-footer">
+                    <span class="price">₹@item.Price.ToString("0.00")</span>
+                    <span class="category">@item.Category</span>
+                    <span class="availability @(item.IsAvailable ? "available" : "unavailable")">
+                        @(item.IsAvailable ? "✅ Available" : "❌ Unavailable")
+                    </span>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="admin-link">
+        <a href="/admin" class="btn-admin">⚙️ Go to Admin Panel</a>
+    </div>
+</div>
+
+<style>
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .header {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+
+    .header h1 {
+        color: #2c3e50;
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+    }
+
+    .header p {
+        color: #ffffff;
+        font-size: 1.2rem;
+    }
+
+    .menu-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+        margin-bottom: 40px;
+    }
+
+    .menu-card {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        border-left: 4px solid #667eea;
+        transition: transform 0.3s ease;
+    }
+
+    .menu-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+    }
+
+    .menu-card.unavailable {
+        opacity: 0.6;
+        border-left-color: #e74c3c;
+    }
+
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 10px;
+    }
+
+    .card-header h3 {
+        margin: 0;
+        color: #2c3e50;
+        font-size: 1.3rem;
+    }
+
+    .popular-badge {
+        background: #ff6b6b;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: bold;
+    }
+
+    .description {
+        color: #7f8c8d;
+        margin-bottom: 15px;
+        line-height: 1.5;
+    }
+
+    .card-footer {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .price {
+        font-size: 1.4rem;
+        font-weight: bold;
+        color: #27ae60;
+    }
+
+    .category {
+        background: #ecf0f1;
+        color: #34495e;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        align-self: flex-start;
+    }
+
+    .availability {
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+
+    .available {
+        color: #27ae60;
+    }
+
+    .unavailable {
+        color: #e74c3c;
+    }
+
+    .admin-link {
+        text-align: center;
+    }
+
+    .btn-admin {
+        display: inline-block;
+        background: #667eea;
+        color: white;
+        padding: 12px 24px;
+        border-radius: 25px;
+        text-decoration: none;
+        font-weight: bold;
+        transition: all 0.3s ease;
+    }
+
+    .btn-admin:hover {
+        background: #5a6fd8;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+</style>
+
+@code {
+    private List<MenuItem> menuItems = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        menuItems = await MenuItemService.GetAllMenuItemsAsync();
+    }
+}

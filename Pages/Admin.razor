@@ -1,0 +1,590 @@
+@page "/admin"
+@using CafeMenuManager.Models
+@using CafeMenuManager.Services
+@inject IMenuItemService MenuItemService
+@inject IJSRuntime JS
+
+<div class="admin-container">
+    <div class="admin-header">
+        <h1>⚙️ Menu Management</h1>
+        <p>Add, edit, and manage your café menu items</p>
+    </div>
+
+    <div class="controls">
+        <button class="btn btn-primary" @onclick="ShowAddForm">
+            ➕ Add New Item
+        </button>
+        <div class="search-box">
+            <input type="text" @bind="searchTerm" @bind:event="oninput" 
+                   placeholder="🔍 Search items..." class="search-input" />
+        </div>
+    </div>
+
+    <!-- Add/Edit Form -->
+    @if (showForm)
+    {
+        <div class="form-overlay">
+            <div class="form-container">
+                <h3>@(editingItem.Id == 0 ? "Add New Item" : "Edit Item")</h3>
+                
+                <div class="form-group">
+                    <label>Name *</label>
+                    <input @bind="editingItem.Name" class="form-control" placeholder="Enter item name" />
+                    @if (string.IsNullOrWhiteSpace(editingItem.Name))
+                    {
+                        <small class="error">Name is required</small>
+                    }
+                </div>
+                
+                <div class="form-group">
+                    <label>Category *</label>
+                    <select @bind="editingItem.Category" class="form-control">
+                        <option value="">Select Category</option>
+                        <option value="Coffee">☕ Coffee</option>
+                        <option value="Tea">🍵 Tea</option>
+                        <option value="Bakery">🥐 Bakery</option>
+                        <option value="Sandwiches">🥪 Sandwiches</option>
+                        <option value="Beverages">🥤 Beverages</option>
+                        <option value="Breakfast">🍳 Breakfast</option>
+                        <option value="Desserts">🍰 Desserts</option>
+                    </select>
+                    @if (string.IsNullOrWhiteSpace(editingItem.Category))
+                    {
+                        <small class="error">Category is required</small>
+                    }
+                </div>
+                
+                <div class="form-group">
+                    <label>Price *</label>
+                    <input type="number" step="0.01" @bind="editingItem.Price" class="form-control" placeholder="0.00" />
+                    @if (editingItem.Price <= 0)
+                    {
+                        <small class="error">Price must be greater than 0</small>
+                    }
+                </div>
+                
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea @bind="editingItem.Description" class="form-control" rows="3" placeholder="Enter item description"></textarea>
+                </div>
+                
+                <div class="form-check">
+                    <input type="checkbox" @bind="editingItem.IsAvailable" class="form-checkbox" />
+                    <label>✅ Available</label>
+                </div>
+                
+                <div class="form-check">
+                    <input type="checkbox" @bind="editingItem.IsPopular" class="form-checkbox" />
+                    <label>🔥 Popular Item</label>
+                </div>
+                
+                <div class="form-actions">
+                    <button class="btn btn-save" @onclick="SaveItem" disabled="@(!IsFormValid())">
+                        💾 Save
+                    </button>
+                    <button class="btn btn-cancel" @onclick="CancelForm">
+                        ❌ Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Items Table -->
+    <div class="table-container">
+        @if (filteredItems.Any())
+        {
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Category</th>
+                        <th>Price</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in filteredItems)
+                    {
+                        <tr class="@(!item.IsAvailable ? "unavailable" : "")">
+                            <td>
+                                <div class="item-name">@item.Name</div>
+                                <div class="item-desc">@item.Description</div>
+                            </td>
+                            <td>
+                                <span class="category-tag">@item.Category</span>
+                                @if (item.IsPopular)
+                                {
+                                    <div class="popular-tag">🔥 Popular</div>
+                                }
+                            </td>
+                            <td class="price">₹@item.Price.ToString("0.00")</td>
+                            <td>
+                                @if (item.IsAvailable)
+                                {
+                                    <span class="status available">✅ Available</span>
+                                }
+                                else
+                                {
+                                    <span class="status unavailable">❌ Unavailable</span>
+                                }
+                            </td>
+                            <td class="actions">
+                                <button class="btn btn-edit" @onclick="() => EditItem(item)">
+                                    ✏️ Edit
+                                </button>
+                                <button class="btn btn-delete" @onclick="() => DeleteItem(item)">
+                                    🗑️ Delete
+                                </button>
+                                <button class="btn btn-toggle" @onclick="() => ToggleAvailability(item)">
+                                    @(item.IsAvailable ? "⏸️ Disable" : "✅ Enable")
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            
+            <!-- FIXED LINE BELOW - Count() instead of Count -->
+            <div class="summary">
+                Showing @filteredItems.Count() items
+                @if (!string.IsNullOrEmpty(searchTerm))
+                {
+                    <span>matching "<strong>@searchTerm</strong>"</span>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="empty-state">
+                <h3>📝 No menu items found</h3>
+                <p>
+                    @if (string.IsNullOrEmpty(searchTerm))
+                    {
+                        <text>Get started by adding your first menu item!</text>
+                    }
+                    else
+                    {
+                        <text>No items match your search. Try different keywords.</text>
+                    }
+                </p>
+                <button class="btn btn-primary" @onclick="ShowAddForm">
+                    ➕ Add Your First Item
+                </button>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .admin-container {
+        padding: 20px;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .admin-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    .admin-header h1 {
+        color: #2c3e50;
+        margin-bottom: 10px;
+    }
+
+    .admin-header p {
+        color: #ffffff;
+        font-size: 1.1rem;
+    }
+
+    .controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
+    .search-input {
+        padding: 10px 15px;
+        border: 2px solid #ddd;
+        border-radius: 20px;
+        width: 300px;
+        font-size: 1rem;
+    }
+
+    .search-input:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+
+    /* Form Styles */
+    .form-overlay {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+
+    .form-container {
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        width: 90%;
+        max-width: 500px;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .form-container h3 {
+        margin: 0 0 20px 0;
+        color: #2c3e50;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 600;
+        color: #2c3e50;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px;
+        border: 2px solid #e9ecef;
+        border-radius: 5px;
+        font-size: 1rem;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+
+    .error {
+        color: #e74c3c;
+        font-size: 0.8rem;
+        margin-top: 5px;
+        display: block;
+    }
+
+    .form-check {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+
+    .form-checkbox {
+        margin-right: 10px;
+        transform: scale(1.2);
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 25px;
+    }
+
+    /* Table Styles */
+    .table-container {
+        background: white;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .items-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .items-table th {
+        background: #667eea;
+        color: white;
+        padding: 15px;
+        text-align: left;
+        font-weight: 600;
+    }
+
+    .items-table td {
+        padding: 15px;
+        border-bottom: 1px solid #ecf0f1;
+    }
+
+    .items-table tr.unavailable {
+        background: #f8f9fa;
+        opacity: 0.7;
+    }
+
+    .items-table tr:hover {
+        background: #f8f9fa;
+    }
+
+    .item-name {
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 5px;
+    }
+
+    .item-desc {
+        color: #7f8c8d;
+        font-size: 0.9rem;
+    }
+
+    .category-tag {
+        background: #e3f2fd;
+        color: #1976d2;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        display: block;
+        margin-bottom: 5px;
+    }
+
+    .popular-tag {
+        color: #ff6b6b;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+
+    .price {
+        font-weight: bold;
+        color: #27ae60;
+        font-size: 1.1rem;
+    }
+
+    .status {
+        font-weight: 500;
+    }
+
+    .status.available {
+        color: #27ae60;
+    }
+
+    .status.unavailable {
+        color: #e74c3c;
+    }
+
+    .actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    /* Button Styles */
+    .btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .btn-primary {
+        background: #667eea;
+        color: white;
+    }
+
+    .btn-save {
+        background: #28a745;
+        color: white;
+    }
+
+    .btn-cancel {
+        background: #6c757d;
+        color: white;
+    }
+
+    .btn-edit {
+        background: #ffc107;
+        color: black;
+    }
+
+    .btn-delete {
+        background: #dc3545;
+        color: white;
+    }
+
+    .btn-toggle {
+        background: #17a2b8;
+        color: white;
+    }
+
+    .btn:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    /* Summary & Empty States */
+    .summary {
+        padding: 15px;
+        background: #f8f9fa;
+        color: #6c757d;
+        text-align: center;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #6c757d;
+    }
+
+    .empty-state h3 {
+        margin-bottom: 10px;
+    }
+</style>
+
+@code {
+    private List<MenuItem> allItems = new();
+    private string searchTerm = string.Empty;
+    private bool showForm = false;
+    private MenuItem editingItem = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadItems();
+    }
+
+    private async Task LoadItems()
+    {
+        allItems = await MenuItemService.GetAllMenuItemsAsync();
+        StateHasChanged();
+    }
+
+    private IEnumerable<MenuItem> filteredItems =>
+        string.IsNullOrWhiteSpace(searchTerm)
+            ? allItems
+            : allItems.Where(item =>
+                item.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                item.Description.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                item.Category.Contains(searchTerm, StringComparison.OrdinalIgnoreCase));
+
+    private bool IsFormValid()
+    {
+        return !string.IsNullOrWhiteSpace(editingItem.Name) &&
+               !string.IsNullOrWhiteSpace(editingItem.Category) &&
+               editingItem.Price > 0;
+    }
+
+    private void ShowAddForm()
+    {
+        editingItem = new MenuItem { IsAvailable = true };
+        showForm = true;
+    }
+
+    private void EditItem(MenuItem item)
+    {
+        editingItem = new MenuItem 
+        { 
+            Id = item.Id,
+            Name = item.Name,
+            Category = item.Category,
+            Price = item.Price,
+            Description = item.Description,
+            IsAvailable = item.IsAvailable,
+            IsPopular = item.IsPopular,
+            ImageUrl = item.ImageUrl,
+            CreatedDate = item.CreatedDate
+        };
+        showForm = true;
+    }
+
+    private async Task SaveItem()
+    {
+        if (!IsFormValid()) return;
+
+        try
+        {
+            if (editingItem.Id == 0)
+            {
+                await MenuItemService.AddMenuItemAsync(editingItem);
+            }
+            else
+            {
+                await MenuItemService.UpdateMenuItemAsync(editingItem);
+            }
+            
+            await LoadItems();
+            showForm = false;
+            editingItem = new MenuItem();
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", $"Error saving item: {ex.Message}");
+        }
+    }
+
+    private void CancelForm()
+    {
+        showForm = false;
+        editingItem = new MenuItem();
+    }
+
+    private async Task DeleteItem(MenuItem item)
+    {
+        var confirmed = await JS.InvokeAsync<bool>("confirm", 
+            $"Are you sure you want to delete '{item.Name}'?");
+        
+        if (confirmed)
+        {
+            try
+            {
+                await MenuItemService.DeleteMenuItemAsync(item.Id);
+                await LoadItems();
+            }
+            catch (Exception ex)
+            {
+                await JS.InvokeVoidAsync("alert", $"Error deleting item: {ex.Message}");
+            }
+        }
+    }
+
+    private async Task ToggleAvailability(MenuItem item)
+{
+    try 
+    {
+        // Create a NEW instance to avoid tracking issues
+        var itemToUpdate = new MenuItem 
+        {
+            Id = item.Id,
+            Name = item.Name,
+            Category = item.Category,
+            Price = item.Price,
+            Description = item.Description,
+            IsAvailable = !item.IsAvailable,  // Toggle availability
+            ImageUrl = item.ImageUrl,
+            IsPopular = item.IsPopular,
+            CreatedDate = item.CreatedDate
+        };
+        
+        await MenuItemService.UpdateMenuItemAsync(itemToUpdate);
+        await LoadItems();
+        
+        // Show success message
+        await JS.InvokeVoidAsync("alert", $"✅ {item.Name} availability updated!");
+    }
+    catch (Exception ex)
+    {
+        await JS.InvokeVoidAsync("alert", $"❌ Error updating item: {ex.Message}");
+    }
+}
+}
