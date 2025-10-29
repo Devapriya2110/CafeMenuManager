@@ -93,7 +93,7 @@ public class MenuItem
 ```
 CafeMenuManager/
 ├── Data/           # Database context (AppDbContext.cs)
-├── Models/         # Data models (MenuItem.cs)
+├── Models/         # Data models (IMenuItem.cs, MenuItem.cs)
 ├── Services/       # Business logic (MenuItemService.cs)
 ├── Pages/          # Blazor components
 │   ├── Index.razor    # Main menu page
