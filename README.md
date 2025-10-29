@@ -90,7 +90,7 @@ public class MenuItem
 
 
 ## 🎯 Project Structure
-
+```
 CafeMenuManager/
 ├── Data/           # Database context (AppDbContext.cs)
 ├── Models/         # Data models (MenuItem.cs)
@@ -101,6 +101,7 @@ CafeMenuManager/
 ├── wwwroot/        # Static files (CSS, images)
 ├── Program.cs      # Application startup
 └── README.md       # This file
+```
 
 
 ## 🔧 Configuration
