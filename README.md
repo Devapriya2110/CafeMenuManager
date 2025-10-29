@@ -30,7 +30,7 @@ A modern, responsive Blazor Server application for managing cafe menu items with
 
 1. **Clone the repository**
 ```bash
-   git clone https://github.com/your-username/CafeMenuManager.git
+   git clone https://github.com/Devapriya2110/CafeMenuManager.git
    cd CafeMenuManager
 ```
 2. **Restore dependencies**
